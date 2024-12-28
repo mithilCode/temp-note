@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,134 +6,314 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temp Notes</title>
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: "Roboto", sans-serif;
+            font-family: 'Roboto', sans-serif;
         }
 
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #f0f0f0, #ffffff);
+            color: #333;
+            overflow: hidden;
+            padding: 20px;
+            transition: background 0.3s ease-in-out;
+        }
 
-        .editor-container {
-            max-width: 50%;
-            width: 100%;
-            margin-right: 10px;
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .add-btn {
+            font-size: 16px;
+            padding: 10px 20px;
+            background-color: #5c6bc0;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, background-color 0.3s ease-in-out;
+        }
+
+        .add-btn:hover {
+            background-color: #3f51b5;
+            transform: scale(1.1);
+        }
+
+        .notification {
+            font-size: 14px;
+            color: #555;
+            margin-left: 20px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
         }
 
         #editors-container {
             display: flex;
-            padding: 0 10px 0 10px;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            padding-right: 15px;
+            transition: all 0.3s ease-in-out;
         }
 
-        .editor {
-            width: 100%;
-            height: calc(100vh - 60px);
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-top: 10px;
-            resize: vertical;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .editor-container {
+            flex: 1 1 calc(33.33% - 30px);
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .editor-container:hover {
+            transform: translateY(-10px);
+            background: #f4f4f4;
+        }
+
+        .editor-container .title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .editor-container input {
+            width: 70%;
+            padding: 12px;
             font-size: 18px;
-            font-weight: 500;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f7f7f7;
+            color: #333;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease, border 0.3s ease;
         }
 
-
-        input.editor-title {
-            width: 80%;
-            padding: 6px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            transition: border-color 0.3s ease;
-            background-color: #f9f9f9;
-            color: #333;
+        .editor-container input:focus {
+            background: #fff;
+            border: 2px solid #5c6bc0;
             outline: none;
         }
 
-        input.editor-title:focus {
-            border-color: #4CAF50;
-        }
-
-
-        button {
-            margin-left: 5px;
-            padding: 5px;
-            background-color: #012d82;
-            color: white;
+        .editor-container button {
+            padding: 8px 15px;
+            background: #5c6bc0;
+            color: #fff;
             border: none;
-            border-radius: 4px;
+            border-radius: 30px;
             cursor: pointer;
-            font-size: 12px;
-            transition: background-color 0.3s;
+            transition: transform 0.3s, background-color 0.3s ease-in-out;
         }
 
-        .add_btn {
-            display: block;
-            margin-left: auto;
-            padding: 2px !important;
-            font-size: 8px;
-            border-radius: 0 !important;
+        .editor-container button.full-view-btn {
+            background: #3f51b5;
         }
 
-        ::-webkit-scrollbar {
-            width: 10px;
+        .editor-container button:hover {
+            background: #3949ab;
+            transform: translateY(-2px);
         }
 
-
-        ::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 5px;
+        .editor-container button.full-view-btn:hover {
+            background: #283593;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #999;
+        .editor-container textarea {
+            width: 100%;
+            height: calc(100vh - 200px);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 16px;
+            background: #f7f7f7;
+            color: #333;
+            border: 1px solid #ddd;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
+            resize: none;
+            transition: background 0.3s ease;
         }
 
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .editor-container textarea:focus {
+            background: #fff;
+            border: 2px solid #5c6bc0;
         }
 
-        ::-webkit-scrollbar-track:hover {
-            background: #e0e0e0;
+        .notification-bar {
+            font-size: 14px;
+            color: #4CAF50;
+            text-align: center;
+            margin-top: 10px;
+            opacity: 0;
+            animation: slideUp 1s forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .editor-container {
+                flex: 1 1 calc(50% - 30px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .add-btn {
+                font-size: 14px;
+                padding: 8px 15px;
+            }
+
+            .notification {
+                font-size: 12px;
+            }
+        }
+
+        #full-view-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            animation: fadeInModal 0.3s forwards;
+        }
+
+        @keyframes fadeInModal {
+            to {
+                opacity: 1;
+            }
+        }
+
+        #full-view-modal-content {
+            background: #fff;
+            padding: 10px;
+            border-radius: 15px;
+            width: 90%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        #full-view-modal textarea {
+            flex: 1;
+            width: 100%;
+            background: #fff;
+            color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            resize: none;
+        }
+
+        #close-modal {
+            align-self: flex-end;
+            background: #ff4081;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, transform 0.3s ease;
+            margin-bottom: 5px;
+        }
+
+        #close-modal:hover {
+            background-color: #ff3366;
+            transform: scale(1.1);
         }
     </style>
+
+
 </head>
 
 <body>
-    <button class="add_btn" onclick="addNewEditor()">Add</button>
+    <div id="header">
+        <button class="add-btn" onclick="addNewEditor()">
+            <i class="fas fa-plus"></i>
+        </button>
+        <span class="notification" id="limit-notification"></span>
+    </div>
 
-    <div id="editors-container">
-        <div class="editor-container">
+    <div id="editors-container"></div>
 
-            <button class="delete-button" onclick="deleteEditor(this)">Delete</button>
-            <input type="text" class="editor-title" placeholder="Enter title">
-            <textarea class="editor" id="editor-1"></textarea>
+    <div class="notification-bar" id="save-notification">Changes saved!</div>
+
+    <div id="full-view-modal">
+        <div id="full-view-modal-content">
+            <button id="close-modal" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <textarea readonly id="full-view-textarea"></textarea>
         </div>
     </div>
+
     <script>
+        const MAX_EDITORS = 5;
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('save-notification');
+            notification.style.display = 'block';
+            notification.textContent = message;
+            notification.style.color = type === 'error' ? '#ff4d4d' : '#4CAF50';
+            setTimeout(() => notification.style.display = 'none', 2000);
+        }
+
         function saveAllToLocalStorage() {
             const editorContainers = document.getElementsByClassName("editor-container");
             const editorIds = [];
 
-            for (let i = 0; i < editorContainers.length; i++) {
-                const editorContainer = editorContainers[i];
-                const editorId = editorContainer.querySelector(".editor").id;
-                const title = editorContainer.querySelector(".editor-title").value;
-                const content = editorContainer.querySelector(".editor").value;
+            for (const editorContainer of editorContainers) {
+                const editorId = editorContainer.querySelector("textarea").id;
+                const title = editorContainer.querySelector("input").value;
+                const content = editorContainer.querySelector("textarea").value;
 
                 localStorage.setItem(editorId, content);
-                localStorage.setItem(editorId + "_title", title);
+                localStorage.setItem(`${editorId}_title`, title);
                 editorIds.push(editorId);
             }
 
             localStorage.setItem("editorIds", JSON.stringify(editorIds));
+            showNotification('Changes saved!');
         }
 
         function loadAllFromLocalStorage() {
@@ -142,107 +321,94 @@
 
             const editorIds = JSON.parse(localStorage.getItem("editorIds")) || [];
 
-            editorIds.forEach((editorId) => {
-                const editorContainer = document.createElement("div");
-                editorContainer.classList.add("editor-container");
-
-                const title = localStorage.getItem(editorId + "_title") || "";
+            for (const editorId of editorIds) {
+                const title = localStorage.getItem(`${editorId}_title`) || "";
                 const content = localStorage.getItem(editorId) || "";
-
-                const editorTitleInput = document.createElement("input");
-                editorTitleInput.type = "text";
-                editorTitleInput.classList.add("editor-title");
-                editorTitleInput.placeholder = "Enter title";
-                editorTitleInput.value = title;
-                const deleteButton = document.createElement("button");
-                deleteButton.textContent = "Delete";
-                deleteButton.classList.add("delete-button");
-                deleteButton.onclick = function () {
-                    deleteEditor(this);
-                };
-                const editorTextarea = document.createElement("textarea");
-                editorTextarea.classList.add("editor");
-                editorTextarea.id = editorId;
-                editorTextarea.value = content;
-
-                editorContainer.appendChild(editorTitleInput);
-                editorContainer.appendChild(deleteButton);
-                editorContainer.appendChild(editorTextarea);
-
-                document.getElementById("editors-container").appendChild(editorContainer);
-
-                editorTitleInput.addEventListener("input", function () {
-                    saveAllToLocalStorage();
-                });
-
-                editorTextarea.addEventListener("input", function () {
-                    saveAllToLocalStorage();
-                });
-            });
+                createEditor(editorId, title, content);
+            }
         }
+
         function addNewEditor() {
-            const numEditors = document.getElementsByClassName("editor").length + 1;
-            console.log("numEditors", numEditors);
-            const newEditorId = `editor-${numEditors}`;
-            if (numEditors > 3) {
+            const numEditors = document.getElementsByClassName("editor-container").length;
+            const notification = document.getElementById('limit-notification');
+
+            if (numEditors >= MAX_EDITORS) {
+                notification.textContent = `Maximum limit of ${MAX_EDITORS} notes reached.`;
                 return;
             }
-            const newEditorContainer = document.createElement("div");
-            newEditorContainer.classList.add("editor-container");
 
-            const newEditorTitle = document.createElement("input");
-            newEditorTitle.type = "text";
-            newEditorTitle.classList.add("editor-title");
-            newEditorTitle.placeholder = `Enter title ${numEditors}`;
+            const newEditorId = `editor-${numEditors + 1}`;
+            createEditor(newEditorId);
+            saveAllToLocalStorage();
+            notification.textContent = "";
+        }
 
-            const newEditor = document.createElement("textarea");
-            newEditor.classList.add("editor");
-            newEditor.setAttribute("id", newEditorId);
-            newEditor.setAttribute("placeholder", `Editor ${numEditors}`);
+        function createEditor(id, title = "", content = "") {
+            const container = document.createElement("div");
+            container.classList.add("editor-container");
 
-            const deleteButton = document.createElement("button");
-            deleteButton.textContent = "Delete";
-            deleteButton.classList.add("delete-button");
-            deleteButton.onclick = function () {
-                deleteEditor(this);
-            };
+            const titleContainer = document.createElement("div");
+            titleContainer.classList.add("title-container");
 
-            newEditorContainer.appendChild(newEditorTitle);
-            newEditorContainer.appendChild(deleteButton);
-            newEditorContainer.appendChild(newEditor);
+            const titleInput = document.createElement("input");
+            titleInput.type = "text";
+            titleInput.placeholder = "Enter title";
+            titleInput.value = title;
+            titleInput.addEventListener("input", saveAllToLocalStorage);
 
-            document.getElementById("editors-container").appendChild(newEditorContainer);
+            const deleteBtn = document.createElement("button");
+            deleteBtn.innerHTML = "<i class='fas fa-trash'></i>";
+            deleteBtn.addEventListener("click", () => deleteEditor(container, id));
 
-            newEditorTitle.addEventListener("input", function () {
-                saveAllToLocalStorage();
-            });
+            const fullViewBtn = document.createElement("button");
+            fullViewBtn.innerHTML = "<i class='fas fa-expand'></i>";
+            fullViewBtn.classList.add("full-view-btn");
+            fullViewBtn.addEventListener("click", () => openFullView(container.querySelector("textarea")));
 
-            newEditor.addEventListener("input", function () {
-                saveAllToLocalStorage();
-            });
+            titleContainer.appendChild(titleInput);
+            titleContainer.appendChild(fullViewBtn);
+            titleContainer.appendChild(deleteBtn);
+
+            const textarea = document.createElement("textarea");
+            textarea.id = id;
+            textarea.placeholder = "Write your code here...";
+            textarea.value = content;
+            textarea.addEventListener("input", saveAllToLocalStorage);
+
+            container.appendChild(titleContainer);
+            container.appendChild(textarea);
+            document.getElementById("editors-container").appendChild(container);
+        }
+
+        function deleteEditor(container, id) {
+            const parent = container.parentNode;
+            parent.removeChild(container);
+
+            localStorage.removeItem(id);
+            localStorage.removeItem(`${id}_title`);
 
             saveAllToLocalStorage();
+        }
+
+        function openFullView(textarea) {
+            const modal = document.getElementById("full-view-modal");
+            const fullViewTextarea = document.getElementById("full-view-textarea");
+            fullViewTextarea.value = textarea.value;
+            modal.style.display = "flex";
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("full-view-modal");
+            modal.style.display = "none";
         }
 
         window.onload = function () {
             loadAllFromLocalStorage();
 
-            if (document.getElementById("editors-container").children.length === 0) {
+            if (document.getElementsByClassName("editor-container").length === 0) {
                 addNewEditor();
             }
         };
-
-        function deleteEditor(button) {
-            const editorContainer = button.parentNode;
-            const editorId = editorContainer.querySelector(".editor").id;
-
-            localStorage.removeItem(editorId);
-            localStorage.removeItem(editorId + "_title");
-
-            editorContainer.parentNode.removeChild(editorContainer);
-
-            saveAllToLocalStorage();
-        }
     </script>
 </body>
 
