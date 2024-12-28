@@ -83,8 +83,8 @@
         }
 
         .editor-container.active-modal {
-            border: 2px solid #5c6bc0; /* Active modal border */
-            box-shadow: 0 0 15px rgba(92, 107, 192, 0.5); /* Active modal shadow */
+            border: 2px solid #5c6bc0; 
+            box-shadow: 0 0 15px rgba(92, 107, 192, 0.5);
         }
 
         .editor-container .title-container {
@@ -364,8 +364,7 @@
             const fullViewTextarea = document.getElementById("full-view-textarea");
             fullViewTextarea.value = textarea.value;
             modal.style.display = "flex";
-            container.classList.add("active-modal"); // Add active class to the modal container
-            console.log(`Opened modal: ${container.querySelector("input").value}`); // Log title of the opened modal
+            container.classList.add("active-modal");
         }
 
         function closeModal() {
@@ -373,12 +372,10 @@
             modal.style.display = "none";
             const activeModal = document.querySelector('.editor-container.active-modal');
             if (activeModal) {
-                console.log(`Closed modal: ${activeModal.querySelector("input").value}`); // Log title of the closed modal
-                activeModal.classList.remove("active-modal"); // Remove active class
+                activeModal.classList.remove("active-modal")
             }
         }
 
-        // Event listener for key press (Alt + number)
         document.addEventListener("keydown", function(event) {
             if (event.altKey && !isNaN(event.key)) {
                 const modalNumber = parseInt(event.key);
@@ -389,7 +386,6 @@
                     openFullView(textarea, modalToOpen);
                 }
             } else if (event.altKey && event.key === "Delete") {
-                // Handle Alt + Delete to close the modal
                 closeModal();
             }
         });
