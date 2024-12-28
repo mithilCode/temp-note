@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temp Notes</title>
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Roboto", sans-serif;
+        }
+
+
+        .editor-container {
+            max-width: 50%;
+            width: 100%;
+            margin-right: 10px;
+        }
+
+        #editors-container {
+            display: flex;
+            padding: 0 10px 0 10px;
+        }
+
+        .editor {
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 10px;
+            resize: vertical;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+
+        input.editor-title {
+            width: 80%;
+            padding: 6px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s ease;
+            background-color: #f9f9f9;
+            color: #333;
+            outline: none;
+        }
+
+        input.editor-title:focus {
+            border-color: #4CAF50;
+        }
+
+
+        button {
+            margin-left: 5px;
+            padding: 5px;
+            background-color: #012d82;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .add_btn {
+            display: block;
+            margin-left: auto;
+            padding: 2px !important;
+            font-size: 8px;
+            border-radius: 0 !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-track:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="add_btn" onclick="addNewEditor()">Add</button>
+
+    <div id="editors-container">
+        <div class="editor-container">
+
+            <button class="delete-button" onclick="deleteEditor(this)">Delete</button>
+            <input type="text" class="editor-title" placeholder="Enter title">
+            <textarea class="editor" id="editor-1"></textarea>
+        </div>
+    </div>
+    <script>
+        function saveAllToLocalStorage() {
+            const editorContainers = document.getElementsByClassName("editor-container");
+            const editorIds = [];
+
+            for (let i = 0; i < editorContainers.length; i++) {
+                const editorContainer = editorContainers[i];
+                const editorId = editorContainer.querySelector(".editor").id;
+                const title = editorContainer.querySelector(".editor-title").value;
+                const content = editorContainer.querySelector(".editor").value;
+
+                localStorage.setItem(editorId, content);
+                localStorage.setItem(editorId + "_title", title);
+                editorIds.push(editorId);
+            }
+
+            localStorage.setItem("editorIds", JSON.stringify(editorIds));
+        }
+
+        function loadAllFromLocalStorage() {
+            document.getElementById("editors-container").innerHTML = "";
+
+            const editorIds = JSON.parse(localStorage.getItem("editorIds")) || [];
+
+            editorIds.forEach((editorId) => {
+                const editorContainer = document.createElement("div");
+                editorContainer.classList.add("editor-container");
+
+                const title = localStorage.getItem(editorId + "_title") || "";
+                const content = localStorage.getItem(editorId) || "";
+
+                const editorTitleInput = document.createElement("input");
+                editorTitleInput.type = "text";
+                editorTitleInput.classList.add("editor-title");
+                editorTitleInput.placeholder = "Enter title";
+                editorTitleInput.value = title;
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.classList.add("delete-button");
+                deleteButton.onclick = function () {
+                    deleteEditor(this);
+                };
+                const editorTextarea = document.createElement("textarea");
+                editorTextarea.classList.add("editor");
+                editorTextarea.id = editorId;
+                editorTextarea.value = content;
+
+                editorContainer.appendChild(editorTitleInput);
+                editorContainer.appendChild(deleteButton);
+                editorContainer.appendChild(editorTextarea);
+
+                document.getElementById("editors-container").appendChild(editorContainer);
+
+                editorTitleInput.addEventListener("input", function () {
+                    saveAllToLocalStorage();
+                });
+
+                editorTextarea.addEventListener("input", function () {
+                    saveAllToLocalStorage();
+                });
+            });
+        }
+        function addNewEditor() {
+            const numEditors = document.getElementsByClassName("editor").length + 1;
+            console.log("numEditors", numEditors);
+            const newEditorId = `editor-${numEditors}`;
+            if (numEditors > 3) {
+                return;
+            }
+            const newEditorContainer = document.createElement("div");
+            newEditorContainer.classList.add("editor-container");
+
+            const newEditorTitle = document.createElement("input");
+            newEditorTitle.type = "text";
+            newEditorTitle.classList.add("editor-title");
+            newEditorTitle.placeholder = `Enter title ${numEditors}`;
+
+            const newEditor = document.createElement("textarea");
+            newEditor.classList.add("editor");
+            newEditor.setAttribute("id", newEditorId);
+            newEditor.setAttribute("placeholder", `Editor ${numEditors}`);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.classList.add("delete-button");
+            deleteButton.onclick = function () {
+                deleteEditor(this);
+            };
+
+            newEditorContainer.appendChild(newEditorTitle);
+            newEditorContainer.appendChild(deleteButton);
+            newEditorContainer.appendChild(newEditor);
+
+            document.getElementById("editors-container").appendChild(newEditorContainer);
+
+            newEditorTitle.addEventListener("input", function () {
+                saveAllToLocalStorage();
+            });
+
+            newEditor.addEventListener("input", function () {
+                saveAllToLocalStorage();
+            });
+
+            saveAllToLocalStorage();
+        }
+
+        window.onload = function () {
+            loadAllFromLocalStorage();
+
+            if (document.getElementById("editors-container").children.length === 0) {
+                addNewEditor();
+            }
+        };
+
+        function deleteEditor(button) {
+            const editorContainer = button.parentNode;
+            const editorId = editorContainer.querySelector(".editor").id;
+
+            localStorage.removeItem(editorId);
+            localStorage.removeItem(editorId + "_title");
+
+            editorContainer.parentNode.removeChild(editorContainer);
+
+            saveAllToLocalStorage();
+        }
+    </script>
+</body>
+
+</html>
