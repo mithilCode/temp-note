@@ -1,403 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temp Notes | Clean & Simple</title>
+    <link rel="shortcut icon" href="faviconnotes.png" type="image/x-icon" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <!-- Prettier Standalone and Plugins -->
+    <script src="https://unpkg.com/prettier@latest/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@latest/plugins/estree.js"></script>
+    <script src="https://unpkg.com/prettier@latest/plugins/babel.js"></script>
+    <script src="https://unpkg.com/prettier@latest/plugins/html.js"></script>
+    <script src="https://unpkg.com/prettier@latest/plugins/postcss.js"></script>
+    <script src="https://unpkg.com/prettier@latest/plugins/markdown.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="logo-section">
+        <img src="faviconnotes.png" alt="Logo" />
+        <h1>TempNotes</h1>
+      </div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temp Notes</title>
-    <link rel="shortcut icon" href="faviconnotes.png" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+      <ul class="nav-links">
+        <li class="nav-item active" id="nav-all" title="View all notes">
+          <i class="fas fa-home"></i>
+          <span>All Notes</span>
+        </li>
+        <li class="nav-item" id="nav-archive" title="View archived notes">
+          <i class="fas fa-archive"></i>
+          <span>Archive</span>
+        </li>
+        <li class="nav-item" id="nav-pinned" title="View pinned notes">
+          <i class="fas fa-thumbtack"></i>
+          <span>Pinned</span>
+        </li>
+        <li class="nav-item" id="export-btn" title="Export all notes to JSON">
+          <i class="fas fa-file-export"></i>
+          <span>Export Data</span>
+        </li>
+        <li class="nav-item" id="import-btn" title="Import notes from JSON file">
+          <i class="fas fa-file-import"></i>
+          <span>Import Data</span>
+        </li>
+      </ul>
+      <input
+        type="file"
+        id="import-input"
+        class="hidden-input"
+        accept=".json"
+        title="Import notes JSON file"
+      />
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Roboto', sans-serif;
-        }
-
-        body {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #f0f0f0, #ffffff);
-            color: #333;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        #header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-            position: relative;
-        }
-
-        .add-btn {
-            font-size: 16px;
-            padding: 10px 20px;
-            background-color: #5c6bc0;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .add-btn:hover {
-            background-color: #3f51b5;
-            transform: scale(1.1);
-        }
-
-        .notification {
-            font-size: 14px;
-            color: #555;
-            margin-left: 20px;
-            opacity: 0;
-            animation: fadeIn 1s forwards;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-
-        #editors-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: space-between;
-            padding-right: 15px;
-        }
-
-        .editor-container {
-            flex: 1 1 calc(33.33% - 30px);
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
-            padding: 10px;
-            position: relative;
-        }
-
-        .editor-container.active-modal {
-            border: 2px solid #5c6bc0; 
-            box-shadow: 0 0 15px rgba(92, 107, 192, 0.5);
-        }
-
-        .editor-container .title-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .editor-container input {
-            width: 70%;
-            padding: 12px;
-            font-size: 18px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: #f7f7f7;
-            color: #333;
-            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .editor-container input:focus {
-            background: #fff;
-            border: 2px solid #5c6bc0;
-            outline: none;
-        }
-
-        .editor-container button {
-            padding: 8px 15px;
-            background: #5c6bc0;
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-        }
-
-        .editor-container button.full-view-btn {
-            background: #3f51b5;
-            margin: 0 5px;
-        }
-
-        .editor-container button:hover {
-            background: #3949ab;
-            transform: translateY(-2px);
-        }
-
-        .editor-container button.full-view-btn:hover {
-            background: #283593;
-        }
-
-        .editor-container textarea {
-            width: 100%;
-            height: calc(100vh - 150px);
-            border-radius: 8px;
-            padding: 15px;
-            font-size: 16px;
-            background: #f7f7f7;
-            color: #333;
-            border: 1px solid #ddd;
-            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
-            resize: none;
-        }
-
-        .editor-container textarea:focus {
-            background: #fff;
-            border: 2px solid #5c6bc0;
-        }
-
-        .notification-bar {
-            font-size: 14px;
-            color: #4CAF50;
-            text-align: center;
-            margin-top: 10px;
-            opacity: 0;
-            animation: slideUp 1s forwards;
-        }
-
-        @keyframes slideUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        #full-view-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            animation: fadeInModal 0.3s forwards;
-        }
-
-        @keyframes fadeInModal {
-            to {
-                opacity: 1;
-            }
-        }
-
-        #full-view-modal-content {
-            background: #fff;
-            padding: 10px;
-            border-radius: 15px;
-            width: 90%;
-            height: 90%;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        #full-view-modal textarea {
-            flex: 1;
-            width: 100%;
-            background: #fff;
-            color: #333;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 16px;
-            resize: none;
-        }
-
-        #close-modal {
-            align-self: flex-end;
-            background: #ff4081;
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 5px;
-        }
-
-        #close-modal:hover {
-            background-color: #ff3366;
-            transform: scale(1.1);
-        }
-    </style>
-
-</head>
-
-<body>
-    <div id="header">
-        <button class="add-btn" onclick="addNewEditor()">
-            <i class="fas fa-plus"></i>
-        </button>
-        <span class="notification" id="limit-notification"></span>
-    </div>
-
-    <div id="editors-container"></div>
-
-    <div class="notification-bar" id="save-notification">Changes saved!</div>
-
-    <div id="full-view-modal">
-        <div id="full-view-modal-content">
-            <button id="close-modal" onclick="closeModal()">
-                <i class="fas fa-times"></i>
-            </button>
-            <textarea readonly id="full-view-textarea"></textarea>
+      <div class="sidebar-footer">
+        <div class="nav-item" id="theme-toggle" title="Toggle Dark/Light theme">
+          <i class="fas fa-moon"></i>
+          <span>Theme</span>
         </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-input" placeholder="Search your notes..." />
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="add-note-btn">
+            <i class="fas fa-plus"></i>
+            New Note
+          </button>
+        </div>
+      </header>
+
+      <section class="notes-container" id="notes-container">
+        <!-- Notes will be rendered here -->
+      </section>
+    </main>
+
+    <!-- Editor Overlay -->
+    <div class="editor-overlay" id="editor-overlay">
+      <div class="editor-modal">
+        <div class="modal-header">
+          <input type="text" id="editor-title" placeholder="Note Title" />
+          <div class="editor-meta">
+            <select id="editor-language" title="Select Language">
+              <option value="text">Plain Text</option>
+              <option value="babel">JavaScript / JSX</option>
+              <option value="typescript">TypeScript / TSX</option>
+              <option value="html">HTML</option>
+              <option value="postcss">CSS / SCSS</option>
+              <option value="markdown">Markdown</option>
+            </select>
+            <input type="text" id="editor-tags" placeholder="Tags (comma separated)" />
+            <button class="btn-icon" id="close-editor" title="Close editor">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div id="editor-image-gallery" class="image-gallery"></div>
+          <textarea id="editor-content" placeholder="Start writing something amazing..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <div id="editor-stats" class="editor-stats">Words: 0 | Chars: 0</div>
+          <div class="modal-actions"></div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        const MAX_EDITORS = 10;
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Changes saved!</div>
 
-        function showNotification(message, type = 'info') {
-            const notification = document.getElementById('save-notification');
-            notification.style.display = 'block';
-            notification.textContent = message;
-            notification.style.color = type === 'error' ? '#ff4d4d' : '#4CAF50';
-            setTimeout(() => notification.style.display = 'none', 2000);
-        }
-
-        function saveAllToLocalStorage() {
-            const editorContainers = document.getElementsByClassName("editor-container");
-            const editorIds = [];
-
-            for (const editorContainer of editorContainers) {
-                const editorId = editorContainer.querySelector("textarea").id;
-                const title = editorContainer.querySelector("input").value;
-                const content = editorContainer.querySelector("textarea").value;
-
-                localStorage.setItem(editorId, content);
-                localStorage.setItem(`${editorId}_title`, title);
-                editorIds.push(editorId);
-            }
-
-            localStorage.setItem("editorIds", JSON.stringify(editorIds));
-            showNotification('Changes saved!');
-        }
-
-        function loadAllFromLocalStorage() {
-            document.getElementById("editors-container").innerHTML = "";
-
-            const editorIds = JSON.parse(localStorage.getItem("editorIds")) || [];
-
-            for (const editorId of editorIds) {
-                const title = localStorage.getItem(`${editorId}_title`) || "";
-                const content = localStorage.getItem(editorId) || "";
-                createEditor(editorId, title, content);
-            }
-        }
-
-        function addNewEditor() {
-            const numEditors = document.getElementsByClassName("editor-container").length;
-            const notification = document.getElementById('limit-notification');
-
-            if (numEditors >= MAX_EDITORS) {
-                notification.textContent = `Maximum limit of ${MAX_EDITORS} notes reached.`;
-                return;
-            }
-
-            const newEditorId = `editor-${numEditors + 1}`;
-            createEditor(newEditorId);
-            saveAllToLocalStorage();
-            notification.textContent = "";
-        }
-
-        function createEditor(id, title = "", content = "") {
-            const container = document.createElement("div");
-            container.classList.add("editor-container");
-
-            const titleContainer = document.createElement("div");
-            titleContainer.classList.add("title-container");
-
-            const titleInput = document.createElement("input");
-            titleInput.type = "text";
-            titleInput.placeholder = "Enter title";
-            titleInput.value = title;
-            titleInput.addEventListener("input", saveAllToLocalStorage);
-
-            const deleteBtn = document.createElement("button");
-            deleteBtn.innerHTML = "<i class='fas fa-trash'></i>";
-            deleteBtn.addEventListener("click", () => deleteEditor(container, id));
-
-            const fullViewBtn = document.createElement("button");
-            fullViewBtn.innerHTML = "<i class='fas fa-expand'></i>";
-            fullViewBtn.classList.add("full-view-btn");
-            fullViewBtn.addEventListener("click", () => openFullView(container.querySelector("textarea"), container));
-
-            titleContainer.appendChild(titleInput);
-            titleContainer.appendChild(fullViewBtn);
-            titleContainer.appendChild(deleteBtn);
-
-            const textarea = document.createElement("textarea");
-            textarea.id = id;
-            textarea.placeholder = "Write your code here...";
-            textarea.value = content;
-            textarea.addEventListener("input", saveAllToLocalStorage);
-
-            container.appendChild(titleContainer);
-            container.appendChild(textarea);
-            document.getElementById("editors-container").appendChild(container);
-        }
-
-        function deleteEditor(container, id) {
-            const parent = container.parentNode;
-            parent.removeChild(container);
-
-            localStorage.removeItem(id);
-            localStorage.removeItem(`${id}_title`);
-
-            saveAllToLocalStorage();
-        }
-
-        function openFullView(textarea, container) {
-            const modal = document.getElementById("full-view-modal");
-            const fullViewTextarea = document.getElementById("full-view-textarea");
-            fullViewTextarea.value = textarea.value;
-            modal.style.display = "flex";
-            container.classList.add("active-modal");
-        }
-
-        function closeModal() {
-            const modal = document.getElementById("full-view-modal");
-            modal.style.display = "none";
-            const activeModal = document.querySelector('.editor-container.active-modal');
-            if (activeModal) {
-                activeModal.classList.remove("active-modal")
-            }
-        }
-
-        document.addEventListener("keydown", function(event) {
-            if (event.altKey && !isNaN(event.key)) {
-                const modalNumber = parseInt(event.key);
-                const modals = document.querySelectorAll('.editor-container');
-                if (modalNumber <= modals.length) {
-                    const modalToOpen = modals[modalNumber - 1];
-                    const textarea = modalToOpen.querySelector('textarea');
-                    openFullView(textarea, modalToOpen);
-                }
-            } else if (event.altKey && event.key === "Delete") {
-                closeModal();
-            }
-        });
-
-        window.onload = function () {
-            loadAllFromLocalStorage();
-
-            if (document.getElementsByClassName("editor-container").length === 0) {
-                addNewEditor();
-            }
-        };
-    </script>
-</body>
-
+    <script src="script.js"></script>
+  </body>
 </html>
