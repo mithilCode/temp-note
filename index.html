@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Temp Notes | Clean & Simple</title>
+    <title>TempNotes Premium | Workspace</title>
     <link rel="shortcut icon" href="faviconnotes.png" type="image/x-icon" />
     <link
       rel="stylesheet"
@@ -19,102 +19,140 @@
     <script src="https://unpkg.com/prettier@latest/plugins/markdown.js"></script>
   </head>
   <body>
-    <aside class="sidebar">
-      <div class="logo-section">
-        <img src="faviconnotes.png" alt="Logo" />
-        <h1>TempNotes</h1>
-      </div>
-
-      <ul class="nav-links">
-        <li class="nav-item active" id="nav-all" title="View all notes">
-          <i class="fas fa-home"></i>
-          <span>All Notes</span>
-        </li>
-        <li class="nav-item" id="nav-archive" title="View archived notes">
-          <i class="fas fa-archive"></i>
-          <span>Archive</span>
-        </li>
-        <li class="nav-item" id="nav-pinned" title="View pinned notes">
-          <i class="fas fa-thumbtack"></i>
-          <span>Pinned</span>
-        </li>
-        <li class="nav-item" id="export-btn" title="Export all notes to JSON">
-          <i class="fas fa-file-export"></i>
-          <span>Export Data</span>
-        </li>
-        <li class="nav-item" id="import-btn" title="Import notes from JSON file">
-          <i class="fas fa-file-import"></i>
-          <span>Import Data</span>
-        </li>
-      </ul>
-      <input
-        type="file"
-        id="import-input"
-        class="hidden-input"
-        accept=".json"
-        title="Import notes JSON file"
-      />
-
-      <div class="sidebar-footer">
-        <div class="nav-item" id="theme-toggle" title="Toggle Dark/Light theme">
-          <i class="fas fa-moon"></i>
-          <span>Theme</span>
-        </div>
-      </div>
-    </aside>
-
-    <main class="main-content">
-      <header class="top-bar">
-        <div class="search-container">
-          <i class="fas fa-search"></i>
-          <input type="text" id="search-input" placeholder="Search your notes..." />
-        </div>
-        <div class="actions">
-          <button class="btn btn-primary" id="add-note-btn">
+    <div class="app-container">
+      <!-- Pillar 1: Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <button class="btn-new-note" id="add-note-btn">
             <i class="fas fa-plus"></i>
-            New Note
+            <span>New Note</span>
           </button>
         </div>
-      </header>
 
-      <section class="notes-container" id="notes-container">
-        <!-- Notes will be rendered here -->
-      </section>
-    </main>
+        <nav class="sidebar-nav">
+          <ul class="nav-links">
+            <li class="nav-item active" id="nav-all" title="All Notes">
+              <i class="fas fa-sticky-note"></i>
+              <span>All Notes</span>
+            </li>
+            <li class="nav-item" id="nav-pinned" title="Pinned">
+              <i class="fas fa-thumbtack"></i>
+              <span>Pinned</span>
+            </li>
+            <li class="nav-item" id="nav-archive" title="Archive">
+              <i class="fas fa-archive"></i>
+              <span>Archive</span>
+            </li>
+            <li class="nav-item" id="nav-trash" title="Trash">
+              <i class="fas fa-trash"></i>
+              <span>Trash</span>
+            </li>
+          </ul>
 
-    <!-- Editor Overlay -->
-    <div class="editor-overlay" id="editor-overlay">
-      <div class="editor-modal">
-        <div class="modal-header">
-          <input type="text" id="editor-title" placeholder="Note Title" />
-          <div class="editor-meta">
-            <select id="editor-language" title="Select Language">
-              <option value="text">Plain Text</option>
-              <option value="babel">JavaScript / JSX</option>
-              <option value="typescript">TypeScript / TSX</option>
-              <option value="html">HTML</option>
-              <option value="postcss">CSS / SCSS</option>
-              <option value="markdown">Markdown</option>
-            </select>
-            <input type="text" id="editor-tags" placeholder="Tags (comma separated)" />
-            <button class="btn-icon" id="close-editor" title="Close editor">
-              <i class="fas fa-times"></i>
-            </button>
+          <div class="nav-section">
+            <div class="section-header">
+              <span>Notebooks</span>
+              <button class="btn-sm" id="add-notebook-btn" title="Create Notebook">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <ul class="nav-links" id="notebook-list">
+              <!-- Notebooks rendered here -->
+            </ul>
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="nav-item" id="export-btn" title="Export Data">
+            <i class="fas fa-file-export"></i>
+            <span>Export</span>
+          </div>
+          <div class="nav-item" id="import-btn" title="Import Data">
+            <i class="fas fa-file-import"></i>
+            <span>Import</span>
+          </div>
+          <div class="nav-item" id="theme-toggle" title="Toggle Theme">
+            <i class="fas fa-moon"></i>
+            <span>Theme</span>
           </div>
         </div>
-        <div class="modal-body">
-          <div id="editor-image-gallery" class="image-gallery"></div>
-          <textarea id="editor-content" placeholder="Start writing something amazing..."></textarea>
+        <input type="file" id="import-input" class="hidden-input" accept=".json" />
+      </aside>
+
+      <!-- Pillar 2: Note List -->
+      <section class="note-list-column">
+        <header class="column-header">
+          <h2 id="view-title">All Notes</h2>
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-input" placeholder="Search notes..." />
+          </div>
+        </header>
+        <div class="notes-container" id="notes-container">
+          <!-- Note thumbnails rendered here -->
         </div>
-        <div class="modal-footer">
-          <div id="editor-stats" class="editor-stats">Words: 0 | Chars: 0</div>
-          <div class="modal-actions"></div>
+      </section>
+
+      <!-- Pillar 3: Integrated Editor -->
+      <section class="editor-column" id="editor-column">
+        <div class="editor-empty-state" id="editor-empty-state">
+          <i class="fas fa-edit"></i>
+          <p>Select a note to view or edit</p>
         </div>
-      </div>
+
+        <div class="editor-workspace hidden" id="editor-workspace">
+          <header class="editor-header">
+            <div class="editor-top-actions">
+              <div class="notebook-indicator" id="current-notebook-display">
+                <i class="fas fa-book"></i>
+                <span id="note-notebook-name">My Notes</span>
+              </div>
+              <div class="editor-meta-actions">
+                <button class="btn-icon" id="editor-pin-btn" title="Pin Note">
+                  <i class="fas fa-thumbtack"></i>
+                </button>
+                <button class="btn-icon" id="editor-archive-btn" title="Archive Note">
+                  <i class="fas fa-archive"></i>
+                </button>
+                <button class="btn-icon" id="editor-delete-btn" title="Move to Trash">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <input
+              type="text"
+              id="editor-title"
+              class="editor-title-input"
+              placeholder="Note Title"
+            />
+            <div class="editor-toolbar">
+              <select id="editor-language" title="Language">
+                <option value="text">Plain Text</option>
+                <option value="babel">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="html">HTML</option>
+                <option value="postcss">CSS</option>
+                <option value="markdown">Markdown</option>
+              </select>
+              <input type="text" id="editor-tags" placeholder="Tags (comma separated)..." />
+              <span id="save-status" class="save-status">Saved</span>
+            </div>
+          </header>
+
+          <div class="editor-body">
+            <div id="editor-image-gallery" class="image-gallery"></div>
+            <textarea id="editor-content" placeholder="Write something..."></textarea>
+          </div>
+
+          <footer class="editor-footer">
+            <div id="editor-stats">Words: 0 | Chars: 0</div>
+          </footer>
+        </div>
+      </section>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast">Changes saved!</div>
+    <div id="toast" class="toast">Action completed!</div>
 
     <script src="script.js"></script>
   </body>

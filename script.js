@@ -1,46 +1,25 @@
 class NoteApp {
   constructor() {
-    this.notes = JSON.parse(localStorage.getItem("temp_notes_v2")) || [];
-    this.storageKeyV1 = "editorIds";
+    this.notes = JSON.parse(localStorage.getItem("temp_notes_v3")) || [];
+    this.notebooks = JSON.parse(localStorage.getItem("temp_notebooks")) || ["My Notes"];
     this.theme = localStorage.getItem("theme") || "light";
+
     this.currentNoteId = null;
-    this.currentView = "all"; // all, pinned, archive
+    this.currentView = "all"; // all, pinned, archive, trash, or a notebook name
     this.saveTimeout = null;
 
     this.init();
   }
 
   init() {
-    this.migrateFromV1();
     this.applyTheme();
     this.attachEventListeners();
     this.render();
   }
 
-  migrateFromV1() {
-    const v1Ids = JSON.parse(localStorage.getItem(this.storageKeyV1));
-    if (v1Ids && this.notes.length === 0) {
-      v1Ids.forEach((id) => {
-        const title = localStorage.getItem(`${id}_title`) || "Untitled";
-        const content = localStorage.getItem(id) || "";
-        this.notes.push({
-          id: Date.now() + Math.random(),
-          title,
-          content,
-          tags: [],
-          language: "text",
-          pinned: false,
-          archived: false,
-          images: [],
-          updatedAt: Date.now(),
-        });
-      });
-      this.save();
-    }
-  }
-
   save() {
-    localStorage.setItem("temp_notes_v2", JSON.stringify(this.notes));
+    localStorage.setItem("temp_notes_v3", JSON.stringify(this.notes));
+    localStorage.setItem("temp_notebooks", JSON.stringify(this.notebooks));
     localStorage.setItem("theme", this.theme);
   }
 
@@ -67,21 +46,60 @@ class NoteApp {
       language: "text",
       pinned: false,
       archived: false,
+      trash: false,
+      notebook:
+        typeof this.currentView === "string" &&
+        !["all", "pinned", "archive", "trash"].includes(this.currentView)
+          ? this.currentView
+          : "My Notes",
       images: [],
       updatedAt: Date.now(),
     };
     this.notes.unshift(newNote);
     this.save();
+    this.currentView = newNote.notebook;
     this.render();
     this.openEditor(newNote.id);
   }
 
-  deleteNote(id) {
-    if (confirm("Delete this note?")) {
-      this.notes = this.notes.filter((n) => n.id !== id);
+  addNotebook() {
+    const name = prompt("Enter notebook name:");
+    if (name && !this.notebooks.includes(name)) {
+      this.notebooks.push(name);
       this.save();
       this.render();
-      this.showToast("Note deleted");
+    }
+  }
+
+  deleteNote(id) {
+    const note = this.notes.find((n) => n.id === id);
+    if (!note) return;
+
+    if (note.trash) {
+      if (confirm("Permanently delete this note?")) {
+        this.notes = this.notes.filter((n) => n.id !== id);
+        this.currentNoteId = null;
+        this.save();
+        this.render();
+        this.showToast("Note deleted permanently");
+      }
+    } else {
+      note.trash = true;
+      note.pinned = false;
+      this.save();
+      this.render();
+      this.showToast("Moved to Trash");
+      if (this.currentNoteId === id) this.closeEditor();
+    }
+  }
+
+  restoreNote(id) {
+    const note = this.notes.find((n) => n.id === id);
+    if (note) {
+      note.trash = false;
+      this.save();
+      this.render();
+      this.showToast("Note restored");
     }
   }
 
@@ -98,10 +116,10 @@ class NoteApp {
     const note = this.notes.find((n) => n.id === id);
     if (note) {
       note.archived = !note.archived;
-      if (note.archived) note.pinned = false; // Unpin if archived
+      if (note.archived) note.pinned = false;
       this.save();
       this.render();
-      this.showToast(note.archived ? "Note archived" : "Note unarchived");
+      this.showToast(note.archived ? "Archived" : "Unarchived");
     }
   }
 
@@ -110,15 +128,7 @@ class NoteApp {
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
-
-    let hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    const strTime = hours + ":" + minutes + " " + ampm;
-
-    return `${day}-${month}-${year} ${strTime}`;
+    return `${day}-${month}-${year}`;
   }
 
   openEditor(id) {
@@ -126,21 +136,38 @@ class NoteApp {
     if (!note) return;
 
     this.currentNoteId = id;
-    const overlay = document.getElementById("editor-overlay");
-    const titleInput = document.getElementById("editor-title");
-    const contentArea = document.getElementById("editor-content");
-    const tagsInput = document.getElementById("editor-tags");
-    const langSelect = document.getElementById("editor-language");
 
-    titleInput.value = note.title;
-    contentArea.value = note.content;
-    tagsInput.value = (note.tags || []).join(", ");
-    langSelect.value = note.language || "text";
-    overlay.style.display = "flex";
+    // UI Transitions
+    document.getElementById("editor-empty-state").classList.add("hidden");
+    const workspace = document.getElementById("editor-workspace");
+    workspace.classList.remove("hidden");
+
+    // Load Data
+    document.getElementById("editor-title").value = note.title;
+    document.getElementById("editor-content").value = note.content;
+    document.getElementById("editor-tags").value = (note.tags || []).join(", ");
+    document.getElementById("editor-language").value = note.language || "text";
+    document.getElementById("note-notebook-name").textContent = note.notebook;
+
+    // Update Icons
+    const pinBtn = document.getElementById("editor-pin-btn");
+    pinBtn.style.color = note.pinned ? "var(--en-green)" : "inherit";
+
+    const archiveBtn = document.getElementById("editor-archive-btn");
+    archiveBtn.style.color = note.archived ? "var(--en-green)" : "inherit";
+
     this.renderImageGallery(note.images || []);
     this.updateStats();
+    this.render(); // To highlight active card
 
-    setTimeout(() => contentArea.focus(), 100);
+    document.getElementById("editor-content").focus();
+  }
+
+  closeEditor() {
+    this.currentNoteId = null;
+    document.getElementById("editor-empty-state").classList.remove("hidden");
+    document.getElementById("editor-workspace").classList.add("hidden");
+    this.render();
   }
 
   saveCurrentNote(silent = false) {
@@ -148,46 +175,31 @@ class NoteApp {
     const note = this.notes.find((n) => n.id === id);
     if (!note) return;
 
-    const titleInput = document.getElementById("editor-title");
-    const contentArea = document.getElementById("editor-content");
-    const tagsInput = document.getElementById("editor-tags");
-    const langSelect = document.getElementById("editor-language");
-
-    note.title = titleInput.value;
-    note.content = contentArea.value;
-    note.tags = tagsInput.value
-      .split(",")
+    note.title = document.getElementById("editor-title").value;
+    note.content = document.getElementById("editor-content").value;
+    note.tags = document
+      .getElementById("editor-tags")
+      .value.split(",")
       .map((t) => t.trim())
       .filter((t) => t);
-    note.language = langSelect.value;
+    note.language = document.getElementById("editor-language").value;
     note.updatedAt = Date.now();
 
     this.save();
     this.render();
-    if (!silent) this.showToast("Note saved");
+    if (!silent) this.showToast("Saved");
     this.updateSaveStatus();
   }
 
   autoSave() {
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    this.saveTimeout = setTimeout(() => {
-      this.saveCurrentNote(true);
-    }, 1000); // 1 second debounce
+    this.saveTimeout = setTimeout(() => this.saveCurrentNote(true), 1000);
   }
 
   updateSaveStatus() {
-    const stats = document.getElementById("editor-stats");
-    const originalText = stats.textContent.split(" | Saved")[0];
-    stats.textContent = `${originalText} | Saved`;
-    setTimeout(() => {
-      stats.textContent = originalText;
-    }, 2000);
-  }
-
-  closeEditor() {
-    document.getElementById("editor-overlay").style.display = "none";
-    document.getElementById("editor-image-gallery").innerHTML = "";
-    this.currentNoteId = null;
+    const el = document.getElementById("save-status");
+    el.classList.add("visible");
+    setTimeout(() => el.classList.remove("visible"), 2000);
   }
 
   updateStats() {
@@ -198,17 +210,14 @@ class NoteApp {
   }
 
   async formatCode() {
-    const contentArea = document.getElementById("editor-content");
-    const lang = document.getElementById("editor-language").value;
+    const note = this.notes.find((n) => n.id === this.currentNoteId);
+    if (!note || note.language === "text") return;
 
-    if (lang === "text") {
-      this.showToast("Select a code language to format", "info");
-      return;
-    }
+    const contentArea = document.getElementById("editor-content");
 
     try {
       const config = {
-        parser: lang,
+        parser: note.language,
         plugins: prettierPlugins,
         semi: true,
         singleQuote: true,
@@ -217,7 +226,10 @@ class NoteApp {
 
       const formatted = await prettier.format(contentArea.value, config);
       contentArea.value = formatted;
+      note.content = formatted;
       this.updateStats();
+      this.save();
+      this.render();
       this.showToast("Code formatted");
     } catch (err) {
       console.error(err);
@@ -237,7 +249,6 @@ class NoteApp {
           note.images.push(base64);
           this.renderImageGallery(note.images);
           this.save();
-          this.showToast("Image pasted");
         }
       }
     }
@@ -247,24 +258,21 @@ class NoteApp {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = (event) => {
+      reader.onload = (e) => {
         const img = new Image();
-        img.src = event.target.result;
+        img.src = e.target.result;
         img.onload = () => {
           const canvas = document.createElement("canvas");
           const MAX_WIDTH = 800;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
+          let w = img.width,
+            h = img.height;
+          if (w > MAX_WIDTH) {
+            h *= MAX_WIDTH / w;
+            w = MAX_WIDTH;
           }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
           resolve(canvas.toDataURL("image/jpeg", 0.6));
         };
       };
@@ -275,16 +283,12 @@ class NoteApp {
     const gallery = document.getElementById("editor-image-gallery");
     gallery.innerHTML = images
       .map(
-        (img, index) => `
+        (img, idx) => `
       <div class="image-item">
-        <img src="${img}" alt="Attached image" />
+        <img src="${img}" />
         <div class="image-actions">
-          <button class="btn-icon" onclick="app.downloadImage('${img}', ${index})" title="Download image">
-            <i class="fas fa-download"></i>
-          </button>
-          <button class="btn-icon" onclick="app.removeImage(${index})" title="Remove image">
-            <i class="fas fa-trash"></i>
-          </button>
+           <button class="btn-icon" onclick="app.downloadImage('${img}', ${idx})"><i class="fas fa-download"></i></button>
+           <button class="btn-icon" onclick="app.removeImage(${idx})"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `,
@@ -292,211 +296,157 @@ class NoteApp {
       .join("");
   }
 
-  removeImage(index) {
+  removeImage(idx) {
     const note = this.notes.find((n) => n.id === this.currentNoteId);
-    if (note && note.images) {
-      note.images.splice(index, 1);
+    if (note) {
+      note.images.splice(idx, 1);
       this.renderImageGallery(note.images);
       this.save();
-      this.showToast("Image removed");
     }
   }
 
-  downloadImage(base64, index) {
-    const link = document.createElement("a");
-    link.href = base64;
-    link.download = `image_${Date.now()}_${index}.jpg`;
-    link.click();
-  }
-
-  exportData() {
-    const dataStr = JSON.stringify(this.notes, null, 2);
-    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
-    const exportFileDefaultName = "temp_notes_backup.json";
-
-    const linkElement = document.createElement("a");
-    linkElement.setAttribute("href", dataUri);
-    linkElement.setAttribute("download", exportFileDefaultName);
-    linkElement.click();
-    this.showToast("Data exported");
-  }
-
-  importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedNotes = JSON.parse(e.target.result);
-        if (Array.isArray(importedNotes)) {
-          this.notes = [...importedNotes, ...this.notes];
-          this.save();
-          this.render();
-          this.showToast("Data imported");
-        }
-      } catch (err) {
-        this.showToast("Invalid JSON file", "error");
-      }
-    };
-    reader.readAsText(file);
+  downloadImage(base64, idx) {
+    const a = document.createElement("a");
+    a.href = base64;
+    a.download = `img_${idx}.jpg`;
+    a.click();
   }
 
   getFilteredNotes() {
-    const searchValue = document.getElementById("search-input").value.toLowerCase();
+    const query = document.getElementById("search-input").value.toLowerCase();
     return this.notes
       .filter((n) => {
-        // View Filtering
-        if (this.currentView === "archive") {
-          if (!n.archived) return false;
-        } else if (this.currentView === "pinned") {
-          if (!n.pinned || n.archived) return false;
+        // 1. View Filter
+        if (this.currentView === "trash") {
+          if (!n.trash) return false;
         } else {
-          // 'all' view
-          if (n.archived) return false;
+          if (n.trash) return false;
+          if (this.currentView === "pinned" && !n.pinned) return false;
+          if (this.currentView === "archive" && !n.archived) return false;
+          if (
+            this.currentView !== "all" &&
+            !["pinned", "archive"].includes(this.currentView) &&
+            n.notebook !== this.currentView
+          )
+            return false;
         }
 
-        // Search Filtering
-        const matchTitle = (n.title || "").toLowerCase().includes(searchValue);
-        const matchContent = (n.content || "").toLowerCase().includes(searchValue);
-        const matchTags = (n.tags || []).some((t) => t.toLowerCase().includes(searchValue));
-        return matchTitle || matchContent || matchTags;
+        // 2. Search Query
+        return n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query);
       })
-      .sort((a, b) => {
-        if (a.pinned === b.pinned) return b.updatedAt - a.updatedAt;
-        return a.pinned ? -1 : 1;
-      });
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
   render() {
+    // 1. Navigation
+    const notebookList = document.getElementById("notebook-list");
+    notebookList.innerHTML = this.notebooks
+      .map(
+        (nb) => `
+      <li class="nav-item ${this.currentView === nb ? "active" : ""}" onclick="app.setView('${nb}')">
+        <i class="fas fa-book"></i>
+        <span>${nb}</span>
+      </li>
+    `,
+      )
+      .join("");
+
+    // 2. Note List
     const container = document.getElementById("notes-container");
     const filtered = this.getFilteredNotes();
 
-    // Update Sidebar Active State
-    document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
-    const activeNav = document.getElementById(`nav-${this.currentView}`);
-    if (activeNav) activeNav.classList.add("active");
-
-    if (filtered.length === 0) {
-      container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No notes found...</div>`;
-      return;
-    }
+    document.getElementById("view-title").textContent =
+      this.currentView.charAt(0).toUpperCase() + this.currentView.slice(1);
 
     container.innerHTML = filtered
       .map(
-        (note) => `
-            <div class="note-card" onclick="app.openEditor(${note.id})">
-                <div class="note-header">
-                    <span class="note-title">${note.title || "Untitled"}</span>
-                    <div class="language-container">
-                        ${note.images && note.images.length > 0 ? `<i class="fas fa-image media-indicator" title="Includes images"></i>` : ""}
-                        ${note.language && note.language !== "text" ? `<span class="language-badge">${note.language}</span>` : ""}
-                        <button class="pin-btn ${note.pinned ? "pinned" : ""}" onclick="event.stopPropagation(); app.togglePin(${note.id})">
-                            <i class="fas fa-thumbtack"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="note-excerpt">${note.content || "No content..."}</div>
-                <div class="note-tags">
-                    ${(note.tags || []).map((t) => `<span class="tag">#${t}</span>`).join("")}
-                </div>
-                <div class="note-footer">
-                    <span>${this.formatDate(note.updatedAt)}</span>
-                    <div style="display: flex; gap: 4px">
-                        <button class="btn-icon" onclick="event.stopPropagation(); app.toggleArchive(${note.id})" title="${note.archived ? "Unarchive" : "Archive"} note">
-                            <i class="fas fa-${note.archived ? "box-open" : "archive"}"></i>
-                        </button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); app.deleteNote(${note.id})" title="Delete note">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `,
+        (n) => `
+      <div class="note-card ${this.currentNoteId === n.id ? "active" : ""}" onclick="app.openEditor(${n.id})">
+        <div class="note-card-title">${n.title || "Untitled Note"}</div>
+        <div class="note-card-excerpt">${n.content || "No additional text"}</div>
+        <div class="note-card-footer">
+          <span>${this.formatDate(n.updatedAt)}</span>
+          ${n.pinned ? '<i class="fas fa-thumbtack" style="color:var(--en-green)"></i>' : ""}
+        </div>
+      </div>
+    `,
       )
       .join("");
   }
 
-  showToast(message, type = "success") {
-    const toast = document.getElementById("toast");
-    toast.textContent = message;
-    toast.style.display = "block";
-    toast.style.borderColor = type === "error" ? "var(--accent-red)" : "var(--border-color)";
-    setTimeout(() => (toast.style.display = "none"), 3000);
+  setView(view) {
+    this.currentView = view;
+    this.render();
+  }
+
+  showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.display = "block";
+    setTimeout(() => (t.style.display = "none"), 2000);
   }
 
   attachEventListeners() {
     document.getElementById("add-note-btn").onclick = () => this.addNote();
+    document.getElementById("add-notebook-btn").onclick = () => this.addNotebook();
     document.getElementById("theme-toggle").onclick = () => this.toggleTheme();
     document.getElementById("search-input").oninput = () => this.render();
-    document.getElementById("close-editor").onclick = () => this.closeEditor();
 
-    // Editor Auto-save & Interaction
-    document.getElementById("editor-title").oninput = () => this.autoSave();
+    // Sidebar Views
+    document.getElementById("nav-all").onclick = () => this.setView("all");
+    document.getElementById("nav-pinned").onclick = () => this.setView("pinned");
+    document.getElementById("nav-archive").onclick = () => this.setView("archive");
+    document.getElementById("nav-trash").onclick = () => this.setView("trash");
 
-    const editorContent = document.getElementById("editor-content");
-    editorContent.oninput = () => {
+    // Editor Events
+    const title = document.getElementById("editor-title");
+    const content = document.getElementById("editor-content");
+    const tags = document.getElementById("editor-tags");
+    const lang = document.getElementById("editor-language");
+
+    title.oninput = () => this.autoSave();
+    content.oninput = () => {
       this.updateStats();
       this.autoSave();
     };
-    editorContent.onpaste = (e) => this.handlePaste(e);
-
-    document.getElementById("editor-tags").oninput = () => this.autoSave();
-
-    document.getElementById("editor-language").onchange = () => {
+    content.onpaste = (e) => this.handlePaste(e);
+    tags.oninput = () => this.autoSave();
+    lang.onchange = () => {
+      const note = this.notes.find((n) => n.id === this.currentNoteId);
+      if (note) note.language = lang.value;
       this.formatCode();
       this.autoSave();
     };
 
-    document.getElementById("export-btn").onclick = () => this.exportData();
+    // Editor Meta Actions
+    document.getElementById("editor-pin-btn").onclick = () => this.togglePin(this.currentNoteId);
+    document.getElementById("editor-archive-btn").onclick = () =>
+      this.toggleArchive(this.currentNoteId);
+    document.getElementById("editor-delete-btn").onclick = () =>
+      this.deleteNote(this.currentNoteId);
+
+    // Export/Import
+    document.getElementById("export-btn").onclick = () => {
+      const blob = new Blob([JSON.stringify(this.notes)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "notes.json";
+      a.click();
+    };
     document.getElementById("import-btn").onclick = () =>
       document.getElementById("import-input").click();
-    document.getElementById("import-input").onchange = (e) => this.importData(e);
-
-    // Sidebar Navigation
-    document.getElementById("nav-all").onclick = () => {
-      this.currentView = "all";
-      this.render();
+    document.getElementById("import-input").onchange = (e) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const imported = JSON.parse(ev.target.result);
+        if (Array.isArray(imported)) {
+          this.notes = [...imported, ...this.notes];
+          this.save();
+          this.render();
+        }
+      };
+      reader.readAsText(e.target.files[0]);
     };
-    document.getElementById("nav-pinned").onclick = () => {
-      this.currentView = "pinned";
-      this.render();
-    };
-    document.getElementById("nav-archive").onclick = () => {
-      this.currentView = "archive";
-      this.render();
-    };
-
-    // Modal Outer Click Closing
-    document.getElementById("editor-overlay").onclick = (e) => {
-      if (e.target.id === "editor-overlay") {
-        this.closeEditor();
-      }
-    };
-
-    // Keyboard Shortcuts
-    window.addEventListener("keydown", (e) => {
-      // New Note: Ctrl + N
-      if (e.ctrlKey && e.key === "n") {
-        e.preventDefault();
-        this.addNote();
-      }
-      // Save & Close: Ctrl + S (only if editor is open)
-      if (e.ctrlKey && e.key === "s" && this.currentNoteId) {
-        e.preventDefault();
-        this.saveCurrentNote();
-        this.closeEditor();
-      }
-      // Format Code: Ctrl + Alt + F
-      if (e.ctrlKey && e.altKey && e.key === "f" && this.currentNoteId) {
-        e.preventDefault();
-        this.formatCode();
-      }
-      // Close: Escape
-      if (e.key === "Escape") {
-        this.closeEditor();
-      }
-    });
   }
 }
 
