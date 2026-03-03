@@ -3,47 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TempNotes Premium | Workspace</title>
+    <title>TempNotes — Quick Notes & Snippets</title>
+    <meta
+      name="description"
+      content="A beautiful, fast note-taking workspace for your ideas, code snippets, and notes."
+    />
     <link rel="shortcut icon" href="faviconnotes.png" type="image/x-icon" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
     <link rel="stylesheet" href="style.css" />
     <!-- Prettier Standalone and Plugins -->
-    <script src="https://unpkg.com/prettier@latest/standalone.js"></script>
-    <script src="https://unpkg.com/prettier@latest/plugins/estree.js"></script>
-    <script src="https://unpkg.com/prettier@latest/plugins/babel.js"></script>
-    <script src="https://unpkg.com/prettier@latest/plugins/html.js"></script>
-    <script src="https://unpkg.com/prettier@latest/plugins/postcss.js"></script>
-    <script src="https://unpkg.com/prettier@latest/plugins/markdown.js"></script>
+    <script src="https://unpkg.com/prettier@3.2.5/standalone.js"></script>
+    <script src="https://unpkg.com/prettier@3.2.5/plugins/estree.js"></script>
+    <script src="https://unpkg.com/prettier@3.2.5/plugins/babel.js"></script>
+    <script src="https://unpkg.com/prettier@3.2.5/plugins/html.js"></script>
+    <script src="https://unpkg.com/prettier@3.2.5/plugins/postcss.js"></script>
+    <script src="https://unpkg.com/prettier@3.2.5/plugins/markdown.js"></script>
   </head>
   <body>
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" id="mobile-toggle" title="Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
     <div class="app-container">
       <!-- Pillar 1: Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <button class="btn-new-note" id="add-note-btn">
+          <button class="btn-new-note" id="add-note-btn" title="Create a new note (Ctrl+N)">
             <i class="fas fa-plus"></i>
             <span>New Note</span>
           </button>
         </div>
 
         <nav class="sidebar-nav">
-          <ul class="nav-links">
-            <li class="nav-item active" id="nav-all" title="All Notes">
+          <ul class="nav-links" id="main-nav">
+            <li class="nav-item active" data-view="all" title="All Notes">
               <i class="fas fa-sticky-note"></i>
               <span>All Notes</span>
             </li>
-            <li class="nav-item" id="nav-pinned" title="Pinned">
+            <li class="nav-item" data-view="pinned" title="Pinned Notes">
               <i class="fas fa-thumbtack"></i>
               <span>Pinned</span>
             </li>
-            <li class="nav-item" id="nav-archive" title="Archive">
+            <li class="nav-item" data-view="archive" title="Archived Notes">
               <i class="fas fa-archive"></i>
               <span>Archive</span>
             </li>
-            <li class="nav-item" id="nav-trash" title="Trash">
+            <li class="nav-item" data-view="trash" title="Trash">
               <i class="fas fa-trash"></i>
               <span>Trash</span>
             </li>
@@ -63,15 +73,15 @@
         </nav>
 
         <div class="sidebar-footer">
-          <div class="nav-item" id="export-btn" title="Export Data">
+          <div class="nav-item" id="export-btn" title="Export all notes as JSON">
             <i class="fas fa-file-export"></i>
             <span>Export</span>
           </div>
-          <div class="nav-item" id="import-btn" title="Import Data">
+          <div class="nav-item" id="import-btn" title="Import notes from JSON">
             <i class="fas fa-file-import"></i>
             <span>Import</span>
           </div>
-          <div class="nav-item" id="theme-toggle" title="Toggle Theme">
+          <div class="nav-item" id="theme-toggle" title="Toggle dark/light theme">
             <i class="fas fa-moon"></i>
             <span>Theme</span>
           </div>
@@ -80,12 +90,12 @@
       </aside>
 
       <!-- Pillar 2: Note List -->
-      <section class="note-list-column">
+      <section class="note-list-column" id="note-list-column">
         <header class="column-header">
           <h2 id="view-title">All Notes</h2>
           <div class="search-box">
             <i class="fas fa-search"></i>
-            <input type="text" id="search-input" placeholder="Search notes..." />
+            <input type="text" id="search-input" placeholder="Search notes..." autocomplete="off" />
           </div>
         </header>
         <div class="notes-container" id="notes-container">
@@ -93,11 +103,16 @@
         </div>
       </section>
 
-      <!-- Pillar 3: Integrated Editor -->
+      <!-- Pillar 3: Editor -->
       <section class="editor-column" id="editor-column">
+        <button class="mobile-back-btn" id="mobile-back-btn" title="Back to notes">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+
         <div class="editor-empty-state" id="editor-empty-state">
           <i class="fas fa-edit"></i>
-          <p>Select a note to view or edit</p>
+          <p>Select a note to start editing</p>
+          <div class="shortcut-hint">Press <strong>Ctrl+N</strong> to create a new note</div>
         </div>
 
         <div class="editor-workspace hidden" id="editor-workspace">
@@ -108,13 +123,13 @@
                 <span id="note-notebook-name">My Notes</span>
               </div>
               <div class="editor-meta-actions">
-                <button class="btn-icon" id="editor-pin-btn" title="Pin Note">
+                <button class="btn-icon" id="editor-pin-btn" title="Pin / Unpin">
                   <i class="fas fa-thumbtack"></i>
                 </button>
-                <button class="btn-icon" id="editor-archive-btn" title="Archive Note">
+                <button class="btn-icon" id="editor-archive-btn" title="Archive / Unarchive">
                   <i class="fas fa-archive"></i>
                 </button>
-                <button class="btn-icon" id="editor-delete-btn" title="Move to Trash">
+                <button class="btn-icon danger" id="editor-delete-btn" title="Move to Trash">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -123,7 +138,7 @@
               type="text"
               id="editor-title"
               class="editor-title-input"
-              placeholder="Note Title"
+              placeholder="Untitled Note"
             />
             <div class="editor-toolbar">
               <select id="editor-language" title="Language">
@@ -131,28 +146,49 @@
                 <option value="babel">JavaScript</option>
                 <option value="typescript">TypeScript</option>
                 <option value="html">HTML</option>
-                <option value="postcss">CSS</option>
+                <option value="css">CSS</option>
                 <option value="markdown">Markdown</option>
               </select>
-              <input type="text" id="editor-tags" placeholder="Tags (comma separated)..." />
+              <button class="btn-format" id="format-btn" title="Format code (Ctrl+Shift+F)">
+                <i class="fas fa-magic"></i>
+                Format
+              </button>
+              <div class="toolbar-separator"></div>
+              <input type="text" id="editor-tags" placeholder="Tags (comma separated)" />
               <span id="save-status" class="save-status">Saved</span>
             </div>
           </header>
 
           <div class="editor-body">
             <div id="editor-image-gallery" class="image-gallery"></div>
-            <textarea id="editor-content" placeholder="Write something..."></textarea>
+            <textarea id="editor-content" placeholder="Start writing..."></textarea>
           </div>
 
           <footer class="editor-footer">
             <div id="editor-stats">Words: 0 | Chars: 0</div>
+            <div class="shortcut-info">Ctrl+S to save</div>
           </footer>
         </div>
       </section>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="toast">Action completed!</div>
+    <div id="toast" class="toast">
+      <i class="fas fa-check-circle"></i>
+      <span id="toast-message">Action completed!</span>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal-box">
+        <h3 id="modal-title">Confirm</h3>
+        <p id="modal-message">Are you sure?</p>
+        <div class="modal-actions">
+          <button class="btn-cancel" id="modal-cancel">Cancel</button>
+          <button class="btn-danger" id="modal-confirm">Delete</button>
+        </div>
+      </div>
+    </div>
 
     <script src="script.js"></script>
   </body>
